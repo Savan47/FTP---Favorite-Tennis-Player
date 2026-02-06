@@ -1,5 +1,11 @@
 # main.py
+import os
 from scraper import get_tomorrow_matches
+import smtplib, ssl
+from email.message import EmailMessage
+from dotenv import load_dotenv
+
+
 
 class TennisMatch:
     def __init__(self, p1, p2, time):
@@ -29,5 +35,34 @@ def main():
     if not found:
         print("Nema mečeva sutra.")
 
+def send_notification(match_object):
+    load_dotenv()
+    sender_email = os.getenv("EMAIL_USER")
+    sender_password = os.getenv("EMAIL_PASS")
+
+    msg = EmailMessage
+    msg['Subject'] = f"🎾 Match Alert: {match_object.p1} is playing!"
+    msg['From'] = sender_email
+    msg['To'] = receiver_email #will be added additionaly
+
+    content = (f"Hello, we have good news!\n\n"
+        f"Your selected player is playing tomorrow: \n"
+        f"{match_object} at: {match_object.time}\n\n"
+        f"You are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
+                )
+    msg.set_content(content)
+
+
+
+    try:
+        with smtplib.SMTP("smtp.gmail.com", 587) as server:
+            server.starttls()  # Enkripcija
+            server.login(sender_email, sender_password)
+            server.send_message(msg)
+        print(f"Email sent successfully for {match_object.p1}!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+        
 if __name__ == "__main__":
     main()
