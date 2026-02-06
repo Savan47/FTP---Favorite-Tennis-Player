@@ -22,39 +22,8 @@ def main():
     target = input("Koga tražimo? ").lower()
     target_players = []
     target_players.append(target)
-
-    while True:
-        # Pozivamo funkciju iz drugog fajla
-        raw_data = get_tomorrow_matches()
-        
-        # Pretvaramo sirove podatke u tvoje objekte (klase)
-        matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in raw_data]
-        
-        # Logika za proveru
-        found = False
-        for m in matches:
-            for target in target_players:
-                if target.lower() in m.p1.lower() or target.lower() in m.p2.lower():
-                    found = True
-                    match_id = f"{m.p1}-{m.p2}-{m.time}"
-
-                    if match_id not in SENT_NOTIFICATIONS:
-                        print(f"New match found: {m}. Sending email...")
-                        
-
-                        send_notification(m, target.capitalize())
-                        SENT_NOTIFICATIONS.add(match_id)
-
-                    else:
-                        print(f"Match {m} is already register, i am skipping sending")
-        if not found:
-            print("There is no matches for searched players")
-
-
-
-        print("Bot is resting")
-        wait_time = randint(7200, 10800)
-        time.sleep(wait_time)
+    start_player_checking(target, target_players)
+    
                 
         
 
@@ -93,6 +62,40 @@ def send_notification(match_object, target):
         print(f"Email sent successfully!")
     except Exception as e:
         print(f"Failed to send email: {e}")
+
+def start_player_checking(target, target_players):
+    while True:
+        # Pozivamo funkciju iz drugog fajla
+        raw_data = get_tomorrow_matches()
+        
+        # Pretvaramo sirove podatke u tvoje objekte (klase)
+        matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in raw_data]
+        
+        # Logika za proveru
+        found = False
+        for m in matches:
+            for target in target_players:
+                if target.lower() in m.p1.lower() or target.lower() in m.p2.lower():
+                    found = True
+                    match_id = f"{m.p1}-{m.p2}-{m.time}"
+
+                    if match_id not in SENT_NOTIFICATIONS:
+                        print(f"New match found: {m}. Sending email...")
+                        
+
+                        send_notification(m, target.capitalize())
+                        SENT_NOTIFICATIONS.add(match_id)
+
+                    else:
+                        print(f"Match {m} is already register, i am skipping sending")
+        if not found:
+            print("There is no matches for searched players")
+
+
+
+        print("Bot is resting")
+        wait_time = randint(7200, 10800)
+        time.sleep(wait_time)
 
         
 if __name__ == "__main__":
