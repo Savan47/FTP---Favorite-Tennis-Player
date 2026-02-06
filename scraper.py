@@ -23,7 +23,7 @@ def get_tomorrow_matches():
         driver.get(url)
         time.sleep(5)
         
-        name_elements = driver.find_elements(By.CLASS_NAME, "t-name")
+        name_elements = driver.find_elements(By.CSS_SELECTOR, ".t-name a")
         time_elements = driver.find_elements(By.CLASS_NAME, "time")
 
         for i in range(len(time_elements)):
