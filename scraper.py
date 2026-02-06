@@ -3,17 +3,19 @@ from selenium.webdriver.chrome.service import Service
 from selenium.webdriver.chrome.options import Options
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, timedelta
 import time
 
 def get_tomorrow_matches():
-    """Vraća listu sirovih podataka o mečevima za sutra."""
     chrome_options = Options()
-    chrome_options.add_argument("--headless")
+    chrome_options.add_argument("--headless") # Možeš ostaviti upaljeno
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
+    # Gledamo sutrašnji datum
     tomorrow = datetime.now() + timedelta(days=1)
     url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
     
@@ -21,22 +23,40 @@ def get_tomorrow_matches():
 
     try:
         driver.get(url)
-        time.sleep(5)
+        time.sleep(5) # Dovoljno vremena da se učita JS
         
-        name_elements = driver.find_elements(By.CSS_SELECTOR, ".t-name a")
-        time_elements = driver.find_elements(By.CLASS_NAME, "time")
-
-        for i in range(len(time_elements)):
-            try:
-                m_time = time_elements[i].text.strip()
-                p1 = name_elements[i*2].text.strip()
-                p2 = name_elements[i*2 + 1].text.strip()
+        # Umesto tabele, tražimo direktno sve ćelije sa imenima i vremenima
+        # One su uvek tu ako ima mečeva
+        names = driver.find_elements(By.CLASS_NAME, "t-name")
+        times = driver.find_elements(By.CLASS_NAME, "time")
+        
+        # TennisExplorer stavlja po 2 imena za svaki meč (p1 i p2)
+        # Ali oprez: naslovi turnira takođe imaju klasu t-name!
+        
+        temp_players = []
+        for name in names:
+            # KLJUČ: Igrači uvek imaju <a> tag, turniri (naslovi) uglavnom nemaju
+            links = name.find_elements(By.TAG_NAME, "a")
+            if links:
+                temp_players.append(links[0].text.strip())
+        
+        # Sada uparujemo: na svaka 2 igrača ide 1 vreme
+        # Koristimo min() da izbegnemo IndexError ako se liste ne poklapaju
+        num_matches = min(len(temp_players) // 2, len(times))
+        
+        for i in range(num_matches):
+            p1 = temp_players[i*2]
+            p2 = temp_players[i*2 + 1]
+            m_time = times[i].text.strip()
+            
+            if p1 and p2:
                 scraped_data.append({"p1": p1, "p2": p2, "time": m_time})
-            except IndexError:
-                continue
+                
+    except Exception as e:
+        print(f"Greška pri skeniranju: {e}")
     finally:
         driver.quit()
-    
+        
     return scraped_data
 
 

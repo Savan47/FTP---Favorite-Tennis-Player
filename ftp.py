@@ -40,9 +40,9 @@ def main():
 
                     if match_id not in SENT_NOTIFICATIONS:
                         print(f"New match found: {m}. Sending email...")
-                        send_notification(m)
+                        
 
-
+                        send_notification(m, target.capitalize())
                         SENT_NOTIFICATIONS.add(match_id)
 
                     else:
@@ -58,18 +58,18 @@ def main():
                 
         
 
-def send_notification(match_object):
+def send_notification(match_object, target):
     sender_email = os.getenv("EMAIL_USER")
     sender_password = os.getenv("EMAIL_PASS")
     receiver_email = "96kakashi@gmail.com"
     msg = EmailMessage()
-    msg['Subject'] = f"🎾 Match Alert: {match_object.p1} is playing!"
+    msg['Subject'] = f"🎾 Match Alert: {target} is playing!"
     msg['From'] = sender_email
     msg['To'] = receiver_email #will be added additionaly
 
     content = (f"Hello, we have good news!\n\n"
         f"Your selected player is playing tomorrow: \n"
-        f"{match_object} at: {match_object.time}\n\n"
+        f"{match_object.p1} vs {match_object.p2} at: {match_object.time}\n\n"
         f"You are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
                 )
     msg.set_content(content)
