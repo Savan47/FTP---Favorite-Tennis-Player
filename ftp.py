@@ -5,6 +5,7 @@ from email.message import EmailMessage
 from dotenv import load_dotenv
 from random import randint
 import time
+import threading
 SENT_NOTIFICATIONS = set()
 load_dotenv("emailpass.env")
 
@@ -65,8 +66,16 @@ def send_notification(match_object, target, user_email):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+
+is_bot_active = threading.Event()
+
+
 def start_player_checking(user_email, target_players):
-    while True:
+    is_bot_active.set()
+
+    while is_bot_active.is_set():
+        print("Bot is checking matches...")
+
         
         raw_data = get_tomorrow_matches()
         
@@ -94,10 +103,13 @@ def start_player_checking(user_email, target_players):
             print("There is no matches for searched players")
 
 
-
-        print("Bot is resting")
-        wait_time = randint(7200, 10800)
-        time.sleep(wait_time)
+        for _ in range(randint(7200, 10800) // 5):
+            if not is_bot_active.is_set():
+                break
+            time.sleep(5)
+def stop_checking():
+    is_bot_active.clear()
+    print("Bot stop signal received")
 
         
 if __name__ == "__main__":

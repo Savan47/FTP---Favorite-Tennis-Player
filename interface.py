@@ -13,9 +13,25 @@ class TennisApp(ctk.CTk):
         self.geometry("450x400")
         self.is_running = False
 
+        # Adding icon
+        try:
+            self.iconbitmap("icon.ico")
+        except:
+            print("Icon file not found, using default.")
+
         # -- UI ELEMENTS --
         self.label_title = ctk.CTkLabel(self, text = "🎾 Tennis Match Notifier", font=("Roboto", 24, "bold"))
-        self.label_title.pack(pady=20)
+        self.label_title.pack(pady=(20, 5))
+
+        # Subtitle text
+        self.label_subtitle = ctk.CTkLabel(
+            self, 
+            text="Serving you match alerts in real-time.", 
+            font=("Roboto", 12, "italic"),
+            text_color="gray"
+        )
+        self.label_subtitle.pack(pady=(0, 20))
+
 
         # Email field
         self.entry_email = ctk.CTkEntry(self, placeholder_text="Your Email...", width=300)
@@ -54,7 +70,9 @@ class TennisApp(ctk.CTk):
 
     def stop_bot(self):
 
-        #will be updated
+        from ftp import is_bot_active
+        is_bot_active.clear()
+        
         self.is_running = False
         self.label_status.configure(text="Status: Bot stopped( Restart app to reset)", text_color="red")
 
