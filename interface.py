@@ -1,59 +1,63 @@
-import tkinter as tk
+import customtkinter as ctk
 import threading
 from ftp import start_player_checking
 
-def start_process():
-    email = entry_email.get()
-    player_input = entry_player.get()
+ctk.set_appearance_mode("dark")
+ctk.set_default_color_theme("blue")
 
-    if not email or not player_input:
-        print("Please, fill up all fields!")
-        
-    
-    target_list = [p.strip() for p in player_input.split(",")]
+class TennisApp(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-    bot_thread = threading.Thread(
-        target = start_player_checking,
-        args=(email, target_list),
-        daemon=True
-    )
+        self.title("FTP - Favorite Tennis Player")
+        self.geometry("450x400")
+        self.is_running = False
 
-    bot_thread.start()
-    
-    label_status.config(text=f"Bot works for: {player_input}", fg="green")
-    button.config(state="disabled")
+        # -- UI ELEMENTS --
+        self.label_title = ctk.CTkLabel(self, text = "🎾 Tennis Match Notifier", font=("Roboto", 24, "bold"))
+        self.label_title.pack(pady=20)
 
+        # Email field
+        self.entry_email = ctk.CTkEntry(self, placeholder_text="Your Email...", width=300)
+        self.entry_email.pack(pady=10)
 
+        #Players field
+        self.entry_players = ctk.CTkEntry(self, placeholder_text = "Players (split by comma)...", width=300)
+        self.entry_players.pack(pady=10)
 
+        #Buttons
+        self.btn_start = ctk.CTkButton(self, text = "Start Bot", command=self.run_bot, fg_color="green", hover_color="#056608")
+        self.btn_start.pack(pady=10)
 
-    
+        self.btn_stop = ctk.CTkButton(self, text = "Stop Bot", command=self.stop_bot, fg_color= "red", hover_color="#8b0000")
+        self.btn_stop.pack(pady=10)
 
+        # Status label
+        self.label_status = ctk.CTkLabel(self, text="Status: Ready", text_color="gray")
+        self.label_status.pack(pady=10)
 
+    def run_bot(self):
+        if not self.is_running:
+            email = self.entry_email.get()
+            players_raw = self.entry_players.get()
 
+            if not email or not players_raw:
+                self.label_status.configure(text="Status: Please fill all fields!", text_color="red")
+                return
+            
+            player_list = [p.strip() for p in players_raw.split(",")]
+            self.is_running = True
+            self.label_status.configure(text="Status: Bot is running...", text_color="green")
 
+            self.thread = threading.Thread(target=start_player_checking, args=(email, player_list), daemon=True)
+            self.thread.start()
 
+    def stop_bot(self):
 
+        #will be updated
+        self.is_running = False
+        self.label_status.configure(text="Status: Bot stopped( Restart app to reset)", text_color="red")
 
-root = tk.Tk()
-root.title("FTP - Favorite Tennis Player")
-label = tk.Label(root, text="You want to follow matches for tennis player?").grid(row=0, column=0, columnspan=2)
-
-
-tk.Label(root, text="Enter your email").grid(row=1, column=0)
-tk.Label(root, text="Enter your favorite player").grid(row=2, column=0)
-entry_email = tk.Entry(root)
-entry_player = tk.Entry(root)
-
-entry_email.grid(row=1, column=1)
-entry_player.grid(row=2, column=1)
-
-button = tk.Button(root, text="Start the app",command=start_process)
-button.grid(row=3, column=0)
-
-label_status = tk.Label(root, text="Waiting...")
-label_status.grid(row=4, column=0)
-
-
-
-root.mainloop()
-
+if __name__ == "__main__":
+    app = TennisApp()
+    app.mainloop()
