@@ -79,6 +79,7 @@ def start_player_checking(user_email, target_players):
         time_now = datetime.now()
 
         tomorrow = datetime.now() + timedelta(days=1)
+        today = datetime.now()
         tomorrow_url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
         today_url = f"https://www.tennisexplorer.com/matches/?type=all&year={today.year}&month={today.month:02d}&day={today.day:02d}"
         tomorrow_data = get_matches(tomorrow_url)
@@ -100,6 +101,13 @@ def start_player_checking(user_email, target_players):
                 #15 min before match
                     reminder_id = f"{m.p1}-{m.p2}-{m.time}-REMINDER"
                     try:
+
+                        if ":" not in m.time or len(m.time) > 5:
+                            # Ako piše "Live", "Fin", "Canc." - samo preskoči matematiku
+                            print(f"Preskačem meč {m.p1} - status: {m.time}")
+                            continue
+                        
+
                         match_time_obj = datetime.strptime(m.time, "%H:%M").replace(
                             year=time_now.year, month=time_now.month, day=time_now.day
                         )

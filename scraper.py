@@ -21,7 +21,7 @@ def get_matches(target_url):
     scraped_data = []
 
     try:
-        driver.get(url)
+        driver.get(target_url)
         time.sleep(5) 
         
         
