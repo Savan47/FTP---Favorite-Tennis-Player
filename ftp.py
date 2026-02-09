@@ -5,6 +5,7 @@ from email.message import EmailMessage
 from dotenv import load_dotenv
 from random import randint
 import time
+from datetime import datetime, timedelta
 import threading
 SENT_NOTIFICATIONS = set()
 load_dotenv("emailpass.env")
@@ -75,6 +76,7 @@ def start_player_checking(user_email, target_players):
 
     while is_bot_active.is_set():
         print("Bot is checking matches...")
+        time_now = datetime.now()
 
         
         raw_data = get_tomorrow_matches()
@@ -92,6 +94,30 @@ def start_player_checking(user_email, target_players):
                 if match_found:
                     found = True
                     match_id = f"{m.p1}-{m.p2}-{m.time}"
+                #15 min before match
+                    reminder_id = f"{m.p1}-{m.p2}-{m.time}-REMINDER"
+                    try:
+                        match_time_obj = datetime.strptime(m.time, "%H:%M").replace(
+                            year=time_now.year, month = time_now.month, day = time_now.day
+                        )
+                        notification_threshold = match_time_obj - timedelta(minutes = 15)
+
+                        if time_now >= notification_threshold and time_now < match_time_obj:
+                            if reminder_id not in SENT_NOTIFICATIONS:
+                                print(f"New 15 min reminder should be send. Sending email...")
+                                subject = f"🎾 URGENT: {m.p1.title()} - {m.p2.title()} starts in 15 minutes!"
+                                body = f"Get ready! Your match starts at {m.time}.\n\n\nYou are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
+                                send_notification(user_email, subject, body)
+                                SENT_NOTIFICATIONS.add(reminder_id)
+                            
+
+                    
+
+                    except ValueError:
+                        print(f"Time of the match {m.time} not in HH:MM format, skipping..")
+
+
+
 
                     if match_id not in SENT_NOTIFICATIONS:
                         print(f"New match found: {m}. Sending email...")
