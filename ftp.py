@@ -77,19 +77,19 @@ def start_player_checking(user_email, target_players):
         found = False
         for m in matches:
             for player_name in target_players:
-                if player_name.lower() in m.p1.lower() or player_name.lower() in m.p2.lower():
+                search_parts = player_name.lower().split()
+                match_found = any(part in m.p1.lower() or part in m.p2.lower() for part in search_parts if len(part) > 2)
+
+                if match_found:
                     found = True
                     match_id = f"{m.p1}-{m.p2}-{m.time}"
 
                     if match_id not in SENT_NOTIFICATIONS:
                         print(f"New match found: {m}. Sending email...")
-                        
-
-                        send_notification(m, player_name, user_email)
+                        send_notification(m, player_name.capitalize(), user_email)
                         SENT_NOTIFICATIONS.add(match_id)
-
                     else:
-                        print(f"Match {m} is already register, i am skipping sending")
+                        print(f"Match {m} is already registered, skipping...")
         if not found:
             print("There is no matches for searched players")
 
