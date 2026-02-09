@@ -1,5 +1,5 @@
 import os
-from scraper import get_tomorrow_matches
+from scraper import get_matches
 import smtplib, ssl
 from email.message import EmailMessage
 from dotenv import load_dotenv
@@ -78,11 +78,14 @@ def start_player_checking(user_email, target_players):
         print("Bot is checking matches...")
         time_now = datetime.now()
 
+        tomorrow = datetime.now() + timedelta(days=1)
+        tomorrow_url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
+        today_url = f"https://www.tennisexplorer.com/matches/?type=all&year={today.year}&month={today.month:02d}&day={today.day:02d}"
+        tomorrow_data = get_matches(tomorrow_url)
+        today_data = get_matches(today_url)
+        all_matches = tomorrow_data + today_data
         
-        raw_data = get_tomorrow_matches()
-        
-        
-        matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in raw_data]
+        matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in all_matches]
         
         # Check logic
         found = False
@@ -98,20 +101,35 @@ def start_player_checking(user_email, target_players):
                     reminder_id = f"{m.p1}-{m.p2}-{m.time}-REMINDER"
                     try:
                         match_time_obj = datetime.strptime(m.time, "%H:%M").replace(
-                            year=time_now.year, month = time_now.month, day = time_now.day
+                            year=time_now.year, month=time_now.month, day=time_now.day
                         )
-                        notification_threshold = match_time_obj - timedelta(minutes = 15)
+                        
+                        
+                        if match_time_obj < time_now:
+                            match_time_obj += timedelta(days=1)
 
-                        if time_now >= notification_threshold and time_now < match_time_obj:
-                            if reminder_id not in SENT_NOTIFICATIONS:
-                                print(f"New 15 min reminder should be send. Sending email...")
-                                subject = f"🎾 URGENT: {m.p1.title()} - {m.p2.title()} starts in 15 minutes!"
-                                body = f"Get ready! Your match starts at {m.time}.\n\n\nYou are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
-                                send_notification(user_email, subject, body)
-                                SENT_NOTIFICATIONS.add(reminder_id)
+                        
+                        reminder_time = match_time_obj - timedelta(minutes=15)
+                        seconds_to_wait = (reminder_time - time_now).total_seconds()
+
+                        if seconds_to_wait > 0 and reminder_id not in SENT_NOTIFICATIONS:
+                            print(f"Reminder scheduled for {m.p1} in {seconds_to_wait/3600:.2f} hours.")
                             
+                            
+                            subject = f"🎾 URGENT: {m.p1.title()} starts in 15 minutes!"
+                            body = f"Get ready! Match at {m.time}."
+                            
+                            
+                            t = threading.Timer(seconds_to_wait, send_notification, args=[user_email, subject, body])
+                            t.start()
+                            
+                            SENT_NOTIFICATIONS.add(reminder_id)
 
-                    
+                        
+                        elif -900 < seconds_to_wait <= 0 and reminder_id not in SENT_NOTIFICATIONS:
+                        
+                            send_notification(user_email, subject, body)
+                            SENT_NOTIFICATIONS.add(reminder_id)
 
                     except ValueError:
                         print(f"Time of the match {m.time} not in HH:MM format, skipping..")

@@ -8,7 +8,7 @@ from selenium.webdriver.support import expected_conditions as EC
 from datetime import datetime, timedelta
 import time
 
-def get_tomorrow_matches():
+def get_matches(target_url):
     chrome_options = Options()
     chrome_options.add_argument("--headless") 
     
@@ -16,8 +16,7 @@ def get_tomorrow_matches():
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
     # Looking for tommorows date
-    tomorrow = datetime.now() + timedelta(days=1)
-    url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
+    
     
     scraped_data = []
 
