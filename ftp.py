@@ -27,17 +27,19 @@ def main():
                 
         
 
-def send_notification(match_object, target):
+def send_notification(match_object, target, user_email):
     sender_email = os.getenv("EMAIL_USER")
     sender_password = os.getenv("EMAIL_PASS")
-    receiver_email = "96kakashi@gmail.com"
+
+    receiver_email = user_email
+
     msg = EmailMessage()
-    msg['Subject'] = f"🎾 Match Alert: {target} is playing!"
+    msg['Subject'] = f"🎾 Match Alert: {target.title()} is playing!"
     msg['From'] = sender_email
-    msg['To'] = receiver_email #will be added additionaly
+    msg['To'] = receiver_email
 
     content = (f"Hello, we have good news!\n\n"
-        f"Your selected player is playing tomorrow: \n"
+        f"Your selected player {target.title()} is playing tomorrow: \n"
         f"{match_object.p1} vs {match_object.p2} at: {match_object.time}\n\n"
         f"You are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
                 )
@@ -52,10 +54,10 @@ def send_notification(match_object, target):
         print(f"DEBUG: Pokušavam login za {sender_email} sa lozinkom od {len(sender_password)} karaktera.")
 
     try:
-        context = ssl.create_default_context() # Dodajemo i context za svaki slučaj
+        context = ssl.create_default_context()
         with smtplib.SMTP("smtp.gmail.com", 587) as server:
             server.ehlo()
-            server.starttls(context=context) # Ubaci context ovde
+            server.starttls(context=context) 
             server.ehlo()
             server.login(sender_email, sender_password)
             server.send_message(msg)
@@ -63,19 +65,19 @@ def send_notification(match_object, target):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
-def start_player_checking(target, target_players):
+def start_player_checking(user_email, target_players):
     while True:
-        # Pozivamo funkciju iz drugog fajla
+        
         raw_data = get_tomorrow_matches()
         
-        # Pretvaramo sirove podatke u tvoje objekte (klase)
+        
         matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in raw_data]
         
-        # Logika za proveru
+        # Check logic
         found = False
         for m in matches:
-            for target in target_players:
-                if target.lower() in m.p1.lower() or target.lower() in m.p2.lower():
+            for player_name in target_players:
+                if player_name.lower() in m.p1.lower() or player_name.lower() in m.p2.lower():
                     found = True
                     match_id = f"{m.p1}-{m.p2}-{m.time}"
 
@@ -83,7 +85,7 @@ def start_player_checking(target, target_players):
                         print(f"New match found: {m}. Sending email...")
                         
 
-                        send_notification(m, target.capitalize())
+                        send_notification(m, player_name, user_email)
                         SENT_NOTIFICATIONS.add(match_id)
 
                     else:

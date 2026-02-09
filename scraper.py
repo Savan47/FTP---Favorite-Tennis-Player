@@ -10,12 +10,12 @@ import time
 
 def get_tomorrow_matches():
     chrome_options = Options()
-    chrome_options.add_argument("--headless") # Možeš ostaviti upaljeno
+    chrome_options.add_argument("--headless") 
     
     service = Service(ChromeDriverManager().install())
     driver = webdriver.Chrome(service=service, options=chrome_options)
     
-    # Gledamo sutrašnji datum
+    # Looking for tommorows date
     tomorrow = datetime.now() + timedelta(days=1)
     url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
     
@@ -23,25 +23,22 @@ def get_tomorrow_matches():
 
     try:
         driver.get(url)
-        time.sleep(5) # Dovoljno vremena da se učita JS
+        time.sleep(5) 
         
-        # Umesto tabele, tražimo direktno sve ćelije sa imenima i vremenima
-        # One su uvek tu ako ima mečeva
+        
         names = driver.find_elements(By.CLASS_NAME, "t-name")
         times = driver.find_elements(By.CLASS_NAME, "time")
         
-        # TennisExplorer stavlja po 2 imena za svaki meč (p1 i p2)
-        # Ali oprez: naslovi turnira takođe imaju klasu t-name!
+        
         
         temp_players = []
         for name in names:
-            # KLJUČ: Igrači uvek imaju <a> tag, turniri (naslovi) uglavnom nemaju
+            
             links = name.find_elements(By.TAG_NAME, "a")
             if links:
                 temp_players.append(links[0].text.strip())
         
-        # Sada uparujemo: na svaka 2 igrača ide 1 vreme
-        # Koristimo min() da izbegnemo IndexError ako se liste ne poklapaju
+     
         num_matches = min(len(temp_players) // 2, len(times))
         
         for i in range(num_matches):
