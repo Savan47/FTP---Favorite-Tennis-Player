@@ -48,6 +48,15 @@ class TennisApp(ctk.CTk):
         self.btn_stop = ctk.CTkButton(self, text = "Stop Bot", command=self.stop_bot, fg_color= "red", hover_color="#8b0000")
         self.btn_stop.pack(pady=10)
 
+        #Button for list
+        self.btn_show_list = ctk.CTkButton(
+        master=self, 
+        text="Players you follow", 
+        #command=self.open_players_list,
+        fg_color="gray25",
+        hover_color="gray35")
+        self.btn_show_list.pack(pady=10, padx=20)
+
         # Status label
         self.label_status = ctk.CTkLabel(self, text="Status: Ready", text_color="gray")
         self.label_status.pack(pady=10)
@@ -72,7 +81,7 @@ class TennisApp(ctk.CTk):
 
         from ftp import is_bot_active
         is_bot_active.clear()
-        
+
         self.is_running = False
         self.label_status.configure(text="Status: Bot stopped( Restart app to reset)", text_color="red")
 

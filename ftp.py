@@ -8,7 +8,7 @@ import time
 from datetime import datetime, timedelta
 import threading
 import traceback
-SENT_NOTIFICATIONS = set()
+import json
 load_dotenv("emailpass.env")
 
 
@@ -28,7 +28,21 @@ def main():
     start_player_checking(target, target_players)
     
                 
-        
+def load_sent_notifications():
+    if os.path.exists("sent_matches.json"):
+        try:
+            with open("sent_matches.json", "r") as f:
+                return set(json.load(f))    
+        except:
+            return set()
+    return set()
+SENT_NOTIFICATIONS = load_sent_notifications()
+
+def save_sent_notification(match_id):
+    SENT_NOTIFICATIONS.add(match_id)
+
+    with open("sent_matches.json", "w") as f:
+        json.dump(list(SENT_NOTIFICATIONS))
 
 def send_notification(user_email, subject, content):
     sender_email = os.getenv("EMAIL_USER")
@@ -140,7 +154,7 @@ def start_player_checking(user_email, target_players):
                                 t = threading.Timer(seconds_to_wait, send_notification, args=[user_email, subject, body])
                                 t.start()
                                 
-                                SENT_NOTIFICATIONS.add(reminder_id)
+                                save_sent_notification(reminder_id)
 
                             
                             elif -900 < seconds_to_wait <= 0 and reminder_id not in SENT_NOTIFICATIONS:
@@ -170,7 +184,7 @@ def start_player_checking(user_email, target_players):
                                         f"You are receiving this because you signed up for 'FTP - Favorite Tennis Player'."
                                             )
                                 send_notification(user_email, subject, body)
-                                SENT_NOTIFICATIONS.add(match_id)
+                                save_sent_notification(match_id)
                             else:
                                 print(f"Match found: {m}, but it's more than 24h away. Waiting for next cycle...")
                         else:
@@ -185,7 +199,7 @@ def start_player_checking(user_email, target_players):
             continue 
 
 
-        for _ in range(randint(5, 15)):#randint(7200, 10800) // 5
+        for _ in range(randint((7200, 10800) // 5)):# for fast testing: randint(5,15) 
             if not is_bot_active.is_set():
                 break
             time.sleep(5)
