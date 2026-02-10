@@ -81,10 +81,20 @@ def start_player_checking(user_email, target_players):
             today_url = f"https://www.tennisexplorer.com/matches/?type=all&year={today.year}&month={today.month:02d}&day={today.day:02d}"
             tomorrow_data = get_matches(tomorrow_url)
             today_data = get_matches(today_url)
-            all_matches = tomorrow_data + today_data
             
-            matches = [TennisMatch(d['p1'], d['p2'], d['time']) for d in all_matches]
+            matches = []
+            for d in today_data:
+                m = TennisMatch(d['p1'], d['p2'], d['time'])
+                m.date_obj = today # Ovo je onaj 'today' koji si već definisao iznad
+                matches.append(m)
+
+            for d in tomorrow_data:
+                m = TennisMatch(d['p1'], d['p2'], d['time'])
+                m.date_obj = tomorrow # Ovo je onaj 'tomorrow' koji si definisao iznad
+                matches.append(m)
+
             
+
             # Check logic
             found = False
             for m in matches:
@@ -106,9 +116,11 @@ def start_player_checking(user_email, target_players):
                             
 
                             match_time_obj = datetime.strptime(m.time, "%H:%M").replace(
-                                year=time_now.year, month=time_now.month, day=time_now.day
+                                year=m.date_obj.year, 
+                                month=m.date_obj.month, 
+                                day=m.date_obj.day
                             )
-                            
+                                                    
                             
                             if match_time_obj < time_now:
                                 match_time_obj += timedelta(days=1)
@@ -173,7 +185,7 @@ def start_player_checking(user_email, target_players):
             continue 
 
 
-        for _ in range(randint(7200, 10800) // 5):
+        for _ in range(randint(5, 15)):#randint(7200, 10800) // 5
             if not is_bot_active.is_set():
                 break
             time.sleep(5)
