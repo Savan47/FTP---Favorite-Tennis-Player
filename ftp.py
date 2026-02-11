@@ -12,6 +12,7 @@ import json
 load_dotenv("emailpass.env")
 
 
+target_players = []
 class TennisMatch:
     def __init__(self, p1, p2, time):
         self.p1 = p1
@@ -81,10 +82,14 @@ def send_notification(user_email, subject, content):
 is_bot_active = threading.Event()
 
 
-def start_player_checking(user_email, target_players):
+def start_player_checking(user_email, initial_players):
+    global target_players
+    target_players = initial_players
     is_bot_active.set()
 
     while is_bot_active.is_set():
+        while is_bot_active.is_set():
+            print(f"Trenutno pratim: {target_players}")
         try:
             print("Bot is checking matches...")
             time_now = datetime.now()
