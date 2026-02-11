@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import pystray
+from PIL import Image
 import threading
 from ftp import start_player_checking
 from ftp import target_players
@@ -13,6 +15,7 @@ class TennisApp(ctk.CTk):
         self.title("FTP - Favorite Tennis Player")
         self.geometry("450x400")
         self.is_running = False
+        self.tray_icon_active = False
 
         # Adding icon
         try:
@@ -57,6 +60,11 @@ class TennisApp(ctk.CTk):
         fg_color="gray25",
         hover_color="gray35")
         self.btn_show_list.pack(pady=10, padx=20)
+        
+
+        #Button for hide
+        self.btn_hide = ctk.CTkButton(self, text = "Hide to Tray", command = self.hide_to_tray, fg_color = "gray30")
+        self.btn_hide.pack(pady=10)
 
         # Status label
         self.label_status = ctk.CTkLabel(self, text="Status: Ready", text_color="gray")
@@ -65,9 +73,46 @@ class TennisApp(ctk.CTk):
         # x button in windows frame
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
 
+    def hide_to_tray(self):
+        if self.tray_icon_active:
+            self.withdraw()
+            return
+
+
+
+        self.iconify()
+        self.withdraw()
+        self.update()
+        self.tray_icon_active = True
+
+        image = Image.open("icon.ico")
+
+        def on_show(icon, item):
+            icon.stop()
+            self.tray_icon_active = False
+            self.after(0, self.deiconify)
+            self.after(100, self.focus_force)
+
+
+        def on_exit(icon, item):
+            icon.stop()
+            self.after(0, self.on_closing)
+
+        menu = pystray.Menu(
+            pystray.MenuItem("Show App", on_show, default=True),
+            pystray.MenuItem("Exit Fully", on_exit)
+        )
+
+        icon_tray = pystray.Icon("TennisBot", image, "Tennis Match Notifier", menu)
+        self.after(100, lambda: threading.Thread(target=icon_tray.run, daemon=True).start())
+
     def on_closing(self):
-        from ftp import is_bot_active
-        is_bot_active.clear() 
+        try:
+            from ftp import is_bot_active
+            is_bot_active.clear()
+        except:
+            pass
+        print("Closing App...")
         self.destroy()
     
 
@@ -154,4 +199,5 @@ class TennisApp(ctk.CTk):
 
 if __name__ == "__main__":
     app = TennisApp()
+
     app.mainloop()
