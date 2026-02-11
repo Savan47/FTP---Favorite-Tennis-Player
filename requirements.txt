@@ -3,3 +3,5 @@ webdriver-manager
 python-dotenv
 customtkinter
 pystray
+pillow
+requests
