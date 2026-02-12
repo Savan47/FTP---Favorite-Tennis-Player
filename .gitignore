@@ -2,3 +2,6 @@ __pycache__/
 .env
 *.log
 emailpass.env
+build/
+dist/
+*.spec
