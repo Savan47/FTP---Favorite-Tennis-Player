@@ -1,6 +1,6 @@
 # 🎾 Favorite Tennis Player (FTP) Match Notifier
 
-#### Video Demo:  <LINK_KA_TVOM_YOUTUBE_SNIMKU>
+#### Video Demo:
 
 #### Description:
 The **Favorite Tennis Player (FTP) Notifier** is a desktop application designed for tennis enthusiasts who want to be alerted the moment their favorite players start a match. Built with Python, this tool combines a modern GUI, web scraping, and real-time notifications to ensure you never miss a serve.
