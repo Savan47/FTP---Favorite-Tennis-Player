@@ -2,8 +2,8 @@ import customtkinter as ctk
 import pystray
 from PIL import Image
 import threading
-from ftp import start_player_checking
-from ftp import target_players
+
+
 
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
@@ -13,7 +13,7 @@ class TennisApp(ctk.CTk):
         super().__init__()
 
         self.title("FTP - Favorite Tennis Player")
-        self.geometry("450x400")
+        self.geometry("450x500")
         self.is_running = False
         self.tray_icon_active = False
 
@@ -42,7 +42,7 @@ class TennisApp(ctk.CTk):
         self.entry_email.pack(pady=10)
 
         #Players field
-        self.entry_players = ctk.CTkEntry(self, placeholder_text = "Players (split by comma)...", width=300)
+        self.entry_players = ctk.CTkEntry(self, placeholder_text = "Players surname (split by comma)...", width=300)
         self.entry_players.pack(pady=10)
 
         #Buttons
@@ -72,6 +72,8 @@ class TennisApp(ctk.CTk):
 
         # x button in windows frame
         self.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+        
 
     def hide_to_tray(self):
         if self.tray_icon_active:
@@ -117,21 +119,39 @@ class TennisApp(ctk.CTk):
     
 
     def run_bot(self):
+        
+        
+
         if not self.is_running:
             email = self.entry_email.get()
             players_raw = self.entry_players.get()
 
             if not email or not players_raw:
                 self.label_status.configure(text="Status: Please fill all fields!", text_color="red")
+                self.update()
                 return
             
-            player_list = [p.strip() for p in players_raw.split(",")]
-            self.is_running = True
-            self.label_status.configure(text="Status: Bot is running...", text_color="green")
 
-            self.thread = threading.Thread(target=start_player_checking, args=(email, player_list), daemon=True)
-            self.thread.start()
 
+            try:
+                from ftp import start_player_checking
+
+                player_list = [p.strip() for p in players_raw.split(",")]
+                self.label_status.configure(text="Status: Bot is running...", text_color="green")
+                self.update_idletasks()
+                self.update()
+
+                self.is_running = True
+
+                self.thread = threading.Thread(target=start_player_checking, args=(email, player_list), daemon=True)
+                self.thread.start()
+
+               
+            except Exception as e:
+                print(f"Greska pri pokretanju bota: {e}")
+
+
+                self.after(500, lambda: self.label_status.configure(text="Status: Bot is running ✅"))
     def stop_bot(self):
 
         from ftp import is_bot_active
@@ -139,6 +159,7 @@ class TennisApp(ctk.CTk):
 
         self.is_running = False
         self.label_status.configure(text="Status: Bot stopped( Restart app to reset)", text_color="red")
+        self.update()
 
     def open_players_list(self):
         import ftp

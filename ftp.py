@@ -1,4 +1,5 @@
 import os
+import re
 from scraper import get_matches
 import smtplib, ssl
 from email.message import EmailMessage
@@ -10,6 +11,8 @@ import threading
 import traceback
 import json
 load_dotenv("emailpass.env")
+print("EMAIL_USER exists?", bool(os.getenv("EMAIL_USER")))
+print("EMAIL_PASS exists?", bool(os.getenv("EMAIL_PASS")))
 
 
 target_players = []
@@ -23,10 +26,33 @@ class TennisMatch:
         return f"🎾 {self.p1} vs {self.p2} u {self.time}"
 
 def main():
-    target = input("Koga tražimo? ").lower()
-    target_players = []
-    target_players.append(target)
-    start_player_checking(target, target_players)
+    user_email = input("Email: ").strip()
+    target = input("Koga tražimo? ").strip().lower()
+    start_player_checking(user_email, [target])
+
+
+def name_tokens(s: str) -> list[str]:
+    # keep only letter groups as tokens, lowercase
+    return re.findall(r"[a-z]+", s.lower())
+
+def is_player_match(player_input: str, p1: str, p2: str) -> bool:
+    player = player_input.strip().lower()
+    p1_tokens = name_tokens(p1)
+    p2_tokens = name_tokens(p2)
+
+    # If user types "First Last"
+    parts = player.split()
+    if len(parts) >= 2:
+        first, last = parts[0], parts[-1]
+        first_initial = first[0]
+        return (
+            (last in p1_tokens and first_initial in p1_tokens) or
+            (last in p2_tokens and first_initial in p2_tokens)
+        )
+
+    # If user types just one word like "fils"
+    key = parts[0] if parts else ""
+    return (key in p1_tokens) or (key in p2_tokens)
     
                 
 def load_sent_notifications():
@@ -43,7 +69,7 @@ def save_sent_notification(match_id):
     SENT_NOTIFICATIONS.add(match_id)
 
     with open("sent_matches.json", "w") as f:
-        json.dump(list(SENT_NOTIFICATIONS))
+        json.dump(list(SENT_NOTIFICATIONS), f, indent=2)
 
 def send_notification(user_email, subject, content):
     sender_email = os.getenv("EMAIL_USER")
@@ -88,18 +114,17 @@ def start_player_checking(user_email, initial_players):
     is_bot_active.set()
 
     while is_bot_active.is_set():
-        while is_bot_active.is_set():
-            print(f"Trenutno pratim: {target_players}")
+        print(f"Trenutno pratim: {target_players}")
         try:
             print("Bot is checking matches...")
             time_now = datetime.now()
 
             tomorrow = datetime.now() + timedelta(days=1)
             today = datetime.now()
-            tomorrow_url = f"https://www.tennisexplorer.com/matches/?type=all&year={tomorrow.year}&month={tomorrow.month:02d}&day={tomorrow.day:02d}"
+            tomorrow_url = f"https://www.tennisexplorer.com/matches/?day={tomorrow.day:02d}&month={tomorrow.month:02d}&type=all&year={tomorrow.year}"
             today_url = f"https://www.tennisexplorer.com/matches/?type=all&year={today.year}&month={today.month:02d}&day={today.day:02d}"
-            tomorrow_data = get_matches(tomorrow_url)
-            today_data = get_matches(today_url)
+            tomorrow_data = get_matches(tomorrow_url, timeout=25)
+            today_data = get_matches(today_url, timeout=25)
             
             matches = []
             for d in today_data:
@@ -117,12 +142,21 @@ def start_player_checking(user_email, initial_players):
             # Check logic
             found = False
             for m in matches:
-                for player_name in target_players:
-                    search_parts = player_name.lower().split()
-                    match_found = any(part in m.p1.lower() or part in m.p2.lower() for part in search_parts if len(part) > 2)
 
+                # ✅ Skip doubles
+                if "/" in m.p1 or "/" in m.p2:
+                    continue
+
+                for player_name in target_players:
+                    match_found = is_player_match(player_name, m.p1, m.p2)
+        
                     if match_found:
                         found = True
+                        print("MATCH FOUND FOR:", player_name, "=>", m.p1, "vs", m.p2, "at", m.time)
+
+
+
+
                         match_id = f"{m.p1}-{m.p2}-{m.time}"
                     #15 min before match
                         reminder_id = f"{m.p1}-{m.p2}-{m.time}-REMINDER"
@@ -204,7 +238,8 @@ def start_player_checking(user_email, initial_players):
             continue 
 
 
-        for _ in range(randint((7200, 10800) // 5)):# for fast testing: randint(5,15) 
+        wait_seconds = randint(7200, 10800)  # 2 to 3 hours
+        for _ in range(wait_seconds // 5):
             if not is_bot_active.is_set():
                 break
             time.sleep(5)
