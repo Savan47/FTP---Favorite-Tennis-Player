@@ -10,6 +10,7 @@ from datetime import datetime, timedelta
 import threading
 import traceback
 import json
+from matcher import is_player_match, is_doubles
 load_dotenv("emailpass.env")
 print("EMAIL_USER exists?", bool(os.getenv("EMAIL_USER")))
 print("EMAIL_PASS exists?", bool(os.getenv("EMAIL_PASS")))
@@ -144,7 +145,7 @@ def start_player_checking(user_email, initial_players):
             for m in matches:
 
                 # ✅ Skip doubles
-                if "/" in m.p1 or "/" in m.p2:
+                if is_doubles(m.p1, m.p2):
                     continue
 
                 for player_name in target_players:
