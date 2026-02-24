@@ -2,11 +2,10 @@ import re
 from typing import List
 
 def name_tokens(s: str) -> List[str]:
-    # letter-only tokens, lowercase (handles "Fils A." => ["fils","a"])
-    return re.findall(r"[a-z]+", s.lower())
+    return re.findall(r"[a-z]+", (s or "").lower())
 
 def is_doubles(p1: str, p2: str) -> bool:
-    return ("/" in p1) or ("/" in p2)
+    return ("/" in (p1 or "")) or ("/" in (p2 or ""))
 
 def is_player_match(player_input: str, p1: str, p2: str) -> bool:
     player = (player_input or "").strip().lower()
@@ -32,9 +31,8 @@ def is_player_match(player_input: str, p1: str, p2: str) -> bool:
     if key in p1_tokens or key in p2_tokens:
         return True
 
-    # Optional: allow first-name-only match by initial (e.g. "grigor" -> "g")
-    # Comment this out if you want stricter behavior.
-    if key[0] in p1_tokens or key[0] in p2_tokens:
+    # Optional: allow first-name-only match by initial (safer with min length)
+    if len(key) >= 3 and (key[0] in p1_tokens or key[0] in p2_tokens):
         return True
 
     return False
